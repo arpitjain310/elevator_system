@@ -30,18 +30,16 @@ class ElevatorViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def calculate_next_destination(self, elevator):
-        # Sample logic: find the closest request floor
+
         if elevator.requests.exists():
             closest_request = elevator.requests.order_by('floor').first()
             return closest_request.floor
 
-        # If no requests, return the current floor as the destination
         return elevator.current_floor
 
     @action(detail=True, methods=['GET'])
     def next_destination(self, request, pk=None):
         elevator = self.get_object()
-        # Logic to determine next destination floor
         next_floor = self.calculate_next_destination(elevator)
 
         return Response({'next_destination': next_floor})
