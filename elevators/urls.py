@@ -12,7 +12,8 @@ elevator_system_router.register(
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(elevator_system_router.urls)),
-    path('elevator-system/', ElevatorSystemViewSet.as_view({'post': 'initialize'})),
+    path('elevator-system/',
+         ElevatorSystemViewSet.as_view({'post': 'initialize'})),
     path('elevators/<int:pk>/requests/',
          ElevatorViewSet.as_view({'get': 'requests'}), name='elevator-requests'),
     path('elevators/<int:pk>/next_destination/', ElevatorViewSet.as_view(
