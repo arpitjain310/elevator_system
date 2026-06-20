@@ -1,119 +1,94 @@
 # Elevator System API
 
-## Overview
+A Django REST Framework API that simulates a multi-elevator system. It manages a fleet of elevators and exposes endpoints to dispatch floor requests, query the next destination and movement state, control the doors, and flag an elevator for maintenance.
 
-This repository contains Django-based API that simulates an elevator system. The system allows the management of multiple elevators and provides endpoints to perform various operations related to elevator control.
+## Tech stack
 
-## Features
+- Python 3.10+
+- Django 4.2
+- Django REST Framework
 
-- Initialize the elevator system with a specified number of elevators.
-- Fetch requests, next destination, and current movement status for a given elevator.
-- Save user requests to the list of requests for an elevator.
-- Mark an elevator as not working or in maintenance.
-- Open and close the elevator door.
+## Getting started
 
-## Getting Started
+```bash
+git clone https://github.com/arpitjain310/elevator_system.git
+cd elevator_system
 
-### Prerequisites
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# macOS / Linux
+source venv/bin/activate
 
-- Python 3.x
-- Django
-- Django Rest Framework
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
 
+The API is served under `http://localhost:8000/api/`.
 
-# Elevator System API
+`SECRET_KEY`, `DEBUG`, and `ALLOWED_HOSTS` are read from the environment (`DJANGO_SECRET_KEY`, `DJANGO_DEBUG`, `DJANGO_ALLOWED_HOSTS`); development defaults apply when they are unset.
 
-## API Endpoints
+## Quick example
 
-1. **Initialize Elevator System**
-   - *Endpoint:* `POST /api/elevator-system/initialize/`
-   - *Request Body (JSON):*
-     ```json
-     {
-         "number_of_elevators": 5
-     }
-     ```
-   - *Response (JSON):*
-     ```json
-     {
-         "message": "Elevator system initialized with 5 elevators"
-     }
-     ```
+```bash
+# Create a system with 3 elevators
+curl -X POST http://localhost:8000/api/elevator-system/ \
+  -H "Content-Type: application/json" -d '{"number_of_elevators": 3}'
 
-2. **Fetch All Requests for a Given Elevator**
-   - *Endpoint:* `GET /api/elevators/{elevator_id}/requests/`
-   - *Response (JSON):*
-     ```json
-     [
-         {
-             "id": 1,
-             "floor": 3
-         },
-         {
-             "id": 2,
-             "floor": 5
-         }
-     ]
-     ```
+# Add a floor request to elevator 1
+curl -X POST http://localhost:8000/api/elevators/1/save_request/ \
+  -H "Content-Type: application/json" -d '{"floor": 7}'
 
-3. **Fetch Next Destination Floor for a Given Elevator**
-   - *Endpoint:* `GET /api/elevators/{elevator_id}/next_destination/`
-   - *Response (JSON):*
-     ```json
-     {
-         "next_destination": 4
-     }
-     ```
+# Ask where elevator 1 goes next
+curl http://localhost:8000/api/elevators/1/next_destination/
+```
 
-4. **Fetch If the Elevator is Moving Up or Down Currently**
-   - *Endpoint:* `GET /api/elevators/{elevator_id}/is_moving_up/`
-   - *Response (JSON):*
-     ```json
-     {
-         "is_moving_up": true
-     }
-     ```
+## API endpoints
 
-5. **Save User Request to the List of Requests for an Elevator**
-   - *Endpoint:* `POST /api/elevators/{elevator_id}/save_request/`
-   - *Request Body (JSON):*
-     ```json
-     {
-         "floor": 7
-     }
-     ```
-   - *Response (JSON):*
-     ```json
-     {
-         "message": "Request saved successfully"
-     }
-     ```
+1. **Initialize the elevator system**
+   - `POST /api/elevator-system/`
+   - Body: `{ "number_of_elevators": 5 }`
+   - Response: `{ "message": "Elevator system initialized with 5 elevators" }`
 
-6. **Mark an Elevator as Not Working or in Maintenance**
-   - *Endpoint:* `POST /api/elevators/{elevator_id}/mark_not_working/`
-   - *Response (JSON):*
-     ```json
-     {
-         "message": "Elevator marked as not working"
-     }
-     ```
+2. **Fetch all requests for an elevator**
+   - `GET /api/elevators/{elevator_id}/requests/`
+   - Response: `[ { "id": 1, "floor": 3 }, { "id": 2, "floor": 5 } ]`
 
-7. **Open the Door**
-   - *Endpoint:* `POST /api/elevators/{elevator_id}/open_door/`
-   - *Response (JSON):*
-     ```json
-     {
-         "message": "Door opened"
-     }
-     ```
+3. **Fetch the next destination floor**
+   - `GET /api/elevators/{elevator_id}/next_destination/`
+   - Response: `{ "next_destination": 4 }`
 
-8. **Close the Door**
-   - *Endpoint:* `POST /api/elevators/{elevator_id}/close_door/`
-   - *Response (JSON):*
-     ```json
-     {
-         "message": "Door closed"
-     }
-     ```
+4. **Check whether the elevator is moving**
+   - `GET /api/elevators/{elevator_id}/is_moving_up/`
+   - Response: `{ "is_moving_up": true }`
 
-We can use these API endpoints to interact with the Elevator System.
+5. **Save a user request**
+   - `POST /api/elevators/{elevator_id}/save_request/`
+   - Body: `{ "floor": 7 }`
+   - Response: `{ "message": "Request saved successfully" }`
+
+6. **Mark an elevator as not working / in maintenance**
+   - `POST /api/elevators/{elevator_id}/mark_not_working/`
+   - Response: `{ "message": "Elevator marked as not working" }`
+
+7. **Open the door**
+   - `POST /api/elevators/{elevator_id}/open_door/`
+   - Response: `{ "message": "Door opened" }`
+
+8. **Close the door**
+   - `POST /api/elevators/{elevator_id}/close_door/`
+   - Response: `{ "message": "Door closed" }`
+
+## Running the tests
+
+```bash
+python manage.py test
+```
+
+## Scope and simplifications
+
+This models elevator state and request dispatch, not a real-time control loop:
+
+- `next_destination` returns the lowest pending request floor. A production scheduler would also account for the car's current direction (the SCAN algorithm).
+- Elevator movement is represented as stored state (`current_floor`, `is_moving`) rather than advanced by a background simulation, so those fields reflect explicitly set values.

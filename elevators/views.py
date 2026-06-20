@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from .models import Elevator, Request
 from .serializers import ElevatorSerializer, RequestSerializer
 from rest_framework.decorators import action
@@ -52,11 +52,16 @@ class ElevatorViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['POST'])
     def save_request(self, request, pk=None):
         elevator = self.get_object()
-        floor = request.data.get('floor')
+        try:
+            floor = int(request.data['floor'])
+        except (KeyError, TypeError, ValueError):
+            return Response(
+                {'error': "'floor' is required and must be an integer"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         direction = 'up' if floor > elevator.current_floor else 'down' if floor < elevator.current_floor else 'none'
         new_request = Request.objects.create(floor=floor, direction=direction)
         elevator.requests.add(new_request)
-        elevator.save()
         return Response({'message': 'Request saved successfully'})
 
     @action(detail=True, methods=['POST'])
